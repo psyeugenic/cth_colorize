@@ -1,0 +1,14 @@
+{application, cth_colorize,
+ [{description, "Common Test hooks for more readable logs"},
+  {vsn, "0.5"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib,
+    syntax_lib,
+    cf
+   ]},
+  {env,[]},
+  {modules, []}]}.
+
+%% vim: ft=erlang
