@@ -91,8 +91,9 @@ pre_end_per_testcase(_TC,Config,State) ->
 
 %% @doc Called after each end_per_testcase.
 %% (yellow)* (gray)Text(N*space)(blue)[ (boldred)ok (blue)]
-post_end_per_testcase(TC,_Config,ok,#state{suite=Suite, t1=T1, t0=T0}=State) ->
-    PreStr = string("~w us", [T1-T0]),
+post_end_per_testcase(TC,_Config,ok,#state{suite=Suite, t1=_T1, t0=_T0}=State) ->
+    %PreStr = string("~w us", [T1-T0]),
+    PreStr = "",
     ok = format_status(Suite, TC, PreStr, " ~!GOK "),
     {ok, State};
 post_end_per_testcase(_TC,_Config,Return,State) ->
@@ -100,7 +101,7 @@ post_end_per_testcase(_TC,_Config,Return,State) ->
 
 %% @doc Called after post_init_per_suite, post_end_per_suite, post_init_per_group,
 %% post_end_per_group and post_end_per_testcase if the suite, group or test case failed.
-on_tc_fail(TC, Reason, #state{suite=Suite, t1=T1, t0=T0}=State) ->
+on_tc_fail(TC, Reason, #state{suite=Suite, t1=_T1, t0=_T0}=State) ->
     %PreStr = string("~w us", [T1 - T0]),
     PreStr = "",
     ok = format_status(Suite, TC, PreStr, " ~!R!! "),
