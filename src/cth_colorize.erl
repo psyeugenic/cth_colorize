@@ -92,7 +92,8 @@ pre_end_per_testcase(_TC,Config,State) ->
 %% @doc Called after each end_per_testcase.
 %% (yellow)* (gray)Text(N*space)(blue)[ (boldred)ok (blue)]
 post_end_per_testcase(TC,_Config,ok,#state{suite=Suite, t1=T1, t0=T0}=State) ->
-    ok = format_status(Suite, TC, T1 - T0, " ~!GOK "),
+    PreStr = string("~w us", [T1-T0]),
+    ok = format_status(Suite, TC, PreStr, " ~!GOK "),
     {ok, State};
 post_end_per_testcase(_TC,_Config,Return,State) ->
     {Return, State}.
@@ -100,15 +101,17 @@ post_end_per_testcase(_TC,_Config,Return,State) ->
 %% @doc Called after post_init_per_suite, post_end_per_suite, post_init_per_group,
 %% post_end_per_group and post_end_per_testcase if the suite, group or test case failed.
 on_tc_fail(TC, Reason, #state{suite=Suite, t1=T1, t0=T0}=State) ->
-    ok = format_status(Suite, TC, T1 - T0, " ~!R!! "),
+    %PreStr = string("~w us", [T1 - T0]),
+    PreStr = "",
+    ok = format_status(Suite, TC, PreStr, " ~!R!! "),
     ok = format_reason(Reason),
     State.
 
 %% @doc Called when a test case is skipped by either user action
 %% or due to an init function failing.  
-on_tc_skip(TC, _Reason, #state{suite=Suite, t1=T1, t0=T0}=State) ->
-    ok = format_status(Suite, TC, T1 - T0, "~!mSKIP"),
-    %ok = format_reason(_Reason),
+on_tc_skip(TC, Reason, #state{suite=Suite}=State) ->
+    Why = string_skip_reason(Reason),
+    ok = format_status(Suite, TC, Why, "~!mSKIP"),
     State.
 
 %% @doc Called when the scope of the CTH is done
@@ -122,20 +125,34 @@ format(Format,Args) ->
 string(Format, Args) ->
     lists:flatten(io_lib:format(Format, Args)).
 
+string_skip_reason({tc_auto_skip, Reason}) ->
+    case Reason of
+        {failed, {_Suite, init_per_suite, {failed, _Why}}} ->
+            "init_per_suite failed : [AUTO]";
+        _ ->
+            lists:flatten(io_lib:format("~200p", [Reason]))
+    end;
+string_skip_reason({tc_user_skip, Reason}) ->
+    case Reason of
+        {skipped, Why} ->
+            Why ++ " : [USER]";
+        _  ->
+            lists:flatten(io_lib:format("~200p", [Reason]))
+    end.
+
 columns() ->
     case io:columns() of
         {ok,Cols} -> Cols;
         {error,enotsup} -> 80
     end.
 
-format_status(Suite,TC,Duration,StatusStr) ->
+format_status(Suite,TC,PreStr,StatusStr) ->
     CaseStr = string("~w:~w", [Suite,TC]),
-    TimeStr = string("~w us", [Duration]),
     N = length(CaseStr),
     W = columns() - N - 3 - 6 - 3,
     Color = " ~!y* ~!w~ts~!! ~~~wts ~!b["++ StatusStr ++"~!b]~!!",
     Format = lists:flatten(cf:format(Color,[CaseStr,W])),
-    Str = string(Format,[TimeStr]),
+    Str = string(Format,[PreStr]),
     format("~ts~n",[Str]),
     ok.
 
